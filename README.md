@@ -128,6 +128,16 @@ MIT License. Free to use, modify, and distribute.
 
 ---
 
+## Skills & technologies
+
+`Arduino/C++`
+
+
+## How it works
+
+The main firmware sketch is `blink_two_leds.ino`. Open it in Arduino IDE, verify the board, pin mapping and library requirements, then compile and upload. Test hardware behaviour on the real circuit before relying on it.
+
+
 ## Maintenance & Audit
 
 - **Audit date:** 10 November 2026
