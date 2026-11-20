@@ -83,6 +83,6 @@ The README and wiring notes were compared with the checked-in sketch and root fi
 
 ## Maintenance & Audit
 
-- **Audit date:** 11 November 2026
+- **Audit date:** 20 November 2026
 - **Documentation status:** README updated to match the root-level sketch, actual timing behavior, and board-specific pin limitations.
 - **Verification boundary:** Documentation only; no build or hardware result is claimed.
