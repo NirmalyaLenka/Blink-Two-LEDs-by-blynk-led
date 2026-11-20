@@ -1,147 +1,88 @@
-# Blink-Two-LEDs-by-blynk-led
+# Blink Two LEDs with Independent Timing
 
+A small Arduino/C++ example that toggles two LEDs on independent intervals using `millis()`, without blocking the main loop with `delay()`.
 
-A simple Arduino project that blinks two LEDs independently at different rates using non-blocking timing with `millis()`. This is a good starting point for understanding how to handle multiple tasks simultaneously without using `delay()`.
+**Important naming note:** despite the repository name, the checked-in sketch does not include Blynk libraries, Wi-Fi setup, a Blynk template, or a cloud/app integration. It is a local GPIO timing example.
 
-## What it does
+## Features
 
-LED 1 toggles every 500ms and LED 2 toggles every 800ms. Because they run on different intervals, they go in and out of sync over time, which makes the pattern look more interesting than two LEDs blinking together.
+- LED 1 toggles every 500 ms.
+- LED 2 toggles every 800 ms.
+- Uses separate state and timestamp variables for each LED.
+- Prints the configured pins and intervals to Serial Monitor at 9600 baud.
 
-The sketch uses `millis()` instead of `delay()`, which means the microcontroller is never sitting idle. This is the correct approach once you start adding more sensors or logic to your project.
+The intervals are the time between state changes, not a complete on/off cycle duration.
 
-## Hardware required
+## Hardware
 
-- Arduino Uno, Nano, Mega, or compatible board
-- 2x LEDs (any color)
-- 2x 220-ohm resistors
+- Arduino Uno, classic Nano, or another board with a compatible Arduino core
+- Two LEDs
+- Two current-limiting resistors (220 Ω is the documented example)
 - Breadboard and jumper wires
 
 ## Wiring
 
-```
-Arduino Pin 8  --[220 ohm]--  LED 1 Anode (+)
-                              LED 1 Cathode (-) -- GND
+The sketch's current pin definitions are:
 
-Arduino Pin 9  --[220 ohm]--  LED 2 Anode (+)
-                              LED 2 Cathode (-) -- GND
-```
+| Signal | Sketch pin | Connection |
+|---|---:|---|
+| LED 1 | D8 | GPIO → 220 Ω resistor → LED anode; cathode → GND |
+| LED 2 | D9 | GPIO → 220 Ω resistor → LED anode; cathode → GND |
+| Ground | GND | Common ground for both LEDs |
 
-The longer leg of the LED is the anode (+) and goes toward the resistor. The shorter leg is the cathode (-) and goes to GND.
+Use one resistor per LED. Power the board off before changing the circuit, and never connect an LED directly to a GPIO without current limiting.
 
-```
-Arduino                 Breadboard
--------                 ----------
-Pin 8  ----[220R]------  LED1 (+)
-                              |
-                         LED1 (-)
-                              |
-GND    -------------------  GND rail
+**Board compatibility:** this wiring and pin map is intended for boards such as the Arduino Uno/Nano/Mega where digital pins 8 and 9 are available. Do not assume the same numeric pins are safe on ESP32 or ESP8266 boards; GPIO numbering and reserved pins differ, and GPIO 8/9 are connected to flash on many ESP32 variants. Change the sketch's pin definitions only after checking the exact board pinout.
 
+## Setup and upload
 
-Pin 9  ----[220R]------  LED2 (+)
-                              |
-                         LED2 (-)
-                              |
-GND    -------------------  GND rail
-```
+1. Install the Arduino IDE and the board support package for your board, if it is not already available.
+2. Open `blink_two_leds.ino` from the repository root. The README's earlier `src/` path does not exist in the current tree.
+3. Select the correct board and serial port.
+4. Upload the sketch.
+5. Open Serial Monitor at **9600 baud** to view the startup messages.
 
-## Software setup
-
-1. Open the Arduino IDE (version 1.8 or later).
-2. Go to File > Open and select `src/blink_two_leds.ino`.
-3. Select your board under Tools > Board.
-4. Select the correct port under Tools > Port.
-5. Click Upload.
-
-Open the Serial Monitor at 9600 baud after uploading to see startup messages confirming the pin assignments and intervals.
+No third-party Arduino library is included by the sketch.
 
 ## Configuration
 
-To change the blink speed, edit these two lines near the top of the sketch:
-
-```cpp
-const unsigned long LED1_INTERVAL = 500;  // milliseconds
-const unsigned long LED2_INTERVAL = 800;  // milliseconds
-```
-
-To use different pins, change these:
+The current sketch defines the LED pins and toggle intervals near the top:
 
 ```cpp
 const int LED1_PIN = 8;
 const int LED2_PIN = 9;
+
+const unsigned long LED1_INTERVAL = 500;
+const unsigned long LED2_INTERVAL = 800;
 ```
 
-## How millis() timing works
+Intervals are measured in milliseconds. The loop compares the elapsed time against each interval using unsigned subtraction, so the timing checks continue without blocking waits.
 
-The standard approach using `delay()` looks like this:
+## Repository contents
 
-```cpp
-digitalWrite(LED_PIN, HIGH);
-delay(500);
-digitalWrite(LED_PIN, LOW);
-delay(500);
-```
+| Path | Purpose |
+|---|---|
+| `blink_two_leds.ino` | Main Arduino sketch |
+| `wiring_notes.md` | LED polarity, resistor, and wiring notes |
+| `LICENSE (6)` | Checked-in MIT license text; the filename is non-standard |
+| `gitignore (8)` | Ignore-pattern text, but the filename is not the conventional `.gitignore` name |
+| `README.md` | Project guide |
 
-The problem is that `delay()` blocks the entire program. Nothing else can run during that wait. If you add a second LED with a different interval, you cannot do both at the same time with `delay()`.
+The files named `LICENSE (6)` and `gitignore (8)` have not been renamed. Git will not treat `gitignore (8)` as the repository's root `.gitignore` file.
 
-The `millis()` approach works differently. Instead of waiting, the program checks how much time has passed since the last toggle:
+## Troubleshooting
 
-```cpp
-unsigned long now = millis();
+- **LED stays off:** check polarity, resistor placement, ground, and the selected board pin.
+- **Only one LED blinks:** test each LED and connection separately, then recheck D8 and D9.
+- **Wrong timing:** confirm the intervals are in milliseconds and that the intended sketch was uploaded.
+- **ESP32/ESP8266 board:** review and adapt the pin mapping for the exact board instead of assuming Uno pin numbering.
 
-if (now - lastToggle >= interval) {
-  lastToggle = now;
-  state = !state;
-  digitalWrite(LED_PIN, state);
-}
-```
+## Verification status
 
-This runs in microseconds and immediately moves on to the next task. Two or more LEDs can each have their own interval and timing variable, and they run completely independently.
-
-## Board compatibility
-
-This sketch works without modification on the following boards:
-
-- Arduino Uno
-- Arduino Nano
-- Arduino Mega
-- ESP8266 (NodeMCU, Wemos D1 Mini) - use GPIO numbers, check pin availability
-- ESP32 - works the same way
-
-For ESP8266 and ESP32, avoid pins that are used at boot or tied to special functions. Pins 8 and 9 are safe on Uno and Nano. On ESP32, GPIO 2 and GPIO 4 are reliable general-purpose choices.
-
-## File structure
-
-```
-blink_two_leds/
-├── README.md
-├── src/
-│   └── blink_two_leds.ino
-└── docs/
-    └── wiring_notes.md
-```
-
-## License
-
-MIT License. Free to use, modify, and distribute.
-
-
----
-
-## Skills & technologies
-
-`Arduino/C++`
-
-
-## How it works
-
-The main firmware sketch is `blink_two_leds.ino`. Open it in Arduino IDE, verify the board, pin mapping and library requirements, then compile and upload. Test hardware behaviour on the real circuit before relying on it.
-
+The README and wiring notes were compared with the checked-in sketch and root file list. No Arduino compilation, upload, or physical LED test was performed.
 
 ## Maintenance & Audit
 
 - **Audit date:** 11 November 2026
-- **Documentation status:** README reviewed and audit record added on this date.
-- **Scope and evidence:** This is a documentation-level maintenance pass. It does not establish that source code compiles, dependencies are current, security has been tested, or hardware/runtime behavior has been verified.
-- **Code and tests:** No new functional code changes or test results are claimed by this README update. Run project-specific build, test, and hardware/runtime checks before relying on the project.
-- **Maintenance baseline:** Documentation status recorded through 11 November 2026; revisit setup instructions, dependencies, known limitations, and tests when the project changes.
+- **Documentation status:** README updated to match the root-level sketch, actual timing behavior, and board-specific pin limitations.
+- **Verification boundary:** Documentation only; no build or hardware result is claimed.
